@@ -3,3 +3,6 @@
 .env
 /venv
 .idea
+/csv
+last_page
+logs.csv

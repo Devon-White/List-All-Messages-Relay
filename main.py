@@ -2,13 +2,10 @@ import requests
 import base64
 import os
 import pandas as pd
-from urllib.parse import urlparse
-from urllib.parse import parse_qs
 from dotenv import load_dotenv
 
 load_dotenv()
 
-path = r"PATH TO CSV DIR HERE"
 ProjectID = os.getenv("PROJECTID")
 AuthToken = os.getenv("AUTHTOKEN")
 SpaceURL = os.getenv("SPACEURL")
@@ -22,25 +19,17 @@ print(ProjectID + AuthToken + SpaceURL)
 print(base64_auth)
 
 
-def create_csv(response, page_number):
+def create_csv(response):
     print(f"Parsing Page: {response['links']['self']}")
 
     df = pd.DataFrame(response['data'],
                       columns=('id', 'from', 'to', 'direction', 'status', 'duration', 'source', 'type', 'url',
                                'charge', 'created_at', 'charge_details'))
-    if os.getcwd() != path:
-        print(os.getcwd())
-        os.chdir(path)
-        df.to_csv(page_number + ".csv", index=False, encoding='utf-8', mode='a')
-    else:
-        df.to_csv(page_number + ".csv", index=False, encoding='utf-8', mode='a')
+    df.to_csv("logs.csv", index=False, encoding='utf-8', mode='a')
 
 
 def request(url):
     url = url
-    parsed_url = urlparse(url)
-    query = parse_qs(parsed_url.query)
-    print(query['page_size'])
     payload = {}
     headers = {
         'Accept': 'application/json',
@@ -48,20 +37,15 @@ def request(url):
     }
 
     response = requests.request("GET", url, headers=headers, data=payload).json()
+    create_csv(response)
 
-    if "page_number" in query.keys():
-        txt = "['']"
-        create_csv(response, str(query['page_number']).strip(txt))
-        page(response)
+    while "next" in response['links'].keys():
+        with open("last_page", "w") as f:
+            f.write(response['links']['self'])
+        response = requests.request("GET", response['links']['next'], headers=headers, data=payload).json()
+        create_csv(response)
     else:
-        print("0")
-        create_csv(response, "0")
-        page(response)
-
-
-def page(response):
-    if "next" in response['links'].keys():
-        request(response['links']['next'])
-
+        with open("last_page", "w") as f:
+            f.write(f" Completed scan on:\n{response['links']['self']}")
 
 request(first_url)
