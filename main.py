@@ -13,7 +13,7 @@ SpaceURL = os.getenv("SPACEURL")
 auth_byte = f"{ProjectID}:{AuthToken}".encode("ascii")
 base64_byte = base64.b64encode(auth_byte)
 base64_auth = base64_byte.decode("ascii")
-first_url = f"https://{SpaceURL}/api/voice/logs?page_size=1000
+first_url = f"https://{SpaceURL}/api/voice/logs?page_size=1000"
 
 def create_csv(response):
     print(f"Parsing Page: {response['links']['self']}")
